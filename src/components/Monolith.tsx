@@ -40,128 +40,153 @@ function makeCoreTexture() {
   return tex
 }
 
-function makeServerFaceTexture() {
+function makeProductMarkTexture() {
   const c = document.createElement('canvas')
-  c.width = 1024
-  c.height = 1800
+  c.width = 2048
+  c.height = 768
   const g = c.getContext('2d')!
-
   g.clearRect(0, 0, c.width, c.height)
 
-  // Extremely subtle smoked front-face treatment. The physical material stays visible beneath it.
-  const sheen = g.createLinearGradient(0, 0, c.width, c.height)
-  sheen.addColorStop(0, 'rgba(255,255,255,0.025)')
-  sheen.addColorStop(0.5, 'rgba(0,0,0,0.02)')
-  sheen.addColorStop(1, 'rgba(255,255,255,0.012)')
-  g.fillStyle = sheen
-  g.fillRect(0, 0, c.width, c.height)
+  g.textAlign = 'center'
+  g.textBaseline = 'middle'
 
-  // Fine edge/inset lines
-  g.strokeStyle = 'rgba(236,229,217,.10)'
-  g.lineWidth = 2
-  g.strokeRect(42, 44, 940, 1710)
+  // High-resolution, understated product mark — not a screen.
+  g.fillStyle = 'rgba(236,229,217,.82)'
+  g.font = '600 116px Arial, sans-serif'
+  g.fillText('N O C T U R N E', 1024, 290)
 
-  // Product identity — intentionally restrained
-  g.textAlign = 'left'
-  g.fillStyle = 'rgba(236,229,217,.72)'
-  g.font = '600 34px Arial, sans-serif'
-  g.letterSpacing = '6px'
-  g.fillText('NOCTURNE', 570, 320)
+  g.fillStyle = 'rgba(236,229,217,.40)'
+  g.font = '600 54px Arial, sans-serif'
+  g.fillText('NODE 01', 1024, 455)
 
-  g.fillStyle = 'rgba(236,229,217,.42)'
-  g.font = '600 20px Arial, sans-serif'
-  g.fillText('NODE 01', 572, 360)
-
-  // Amber status slit
-  const line = g.createLinearGradient(570, 0, 780, 0)
-  line.addColorStop(0, 'rgba(242,166,90,1)')
-  line.addColorStop(0.6, 'rgba(242,166,90,.8)')
-  line.addColorStop(1, 'rgba(242,166,90,0)')
-  g.fillStyle = line
-  g.fillRect(570, 430, 210, 8)
-
-  // Inset display panel on the right half
-  g.fillStyle = 'rgba(3,4,6,.94)'
-  g.strokeStyle = 'rgba(236,229,217,.13)'
-  g.lineWidth = 2
-  roundRect(g, 555, 560, 345, 565, 18)
-  g.fill()
-  g.stroke()
-
-  g.fillStyle = '#79d891'
-  g.beginPath()
-  g.arc(590, 615, 8, 0, Math.PI * 2)
-  g.fill()
-
-  g.fillStyle = 'rgba(236,229,217,.78)'
-  g.font = '700 23px Arial, sans-serif'
-  g.fillText('ONLINE', 615, 624)
-
-  const rows = [
-    ['128 GB', 'MEMORY'],
-    ['24 TB', 'NVMe STORAGE'],
-    ['10 GbE', 'NETWORK'],
-    ['OFFLINE READY', 'LOCAL MODE'],
-  ]
-
-  rows.forEach((row, i) => {
-    const y = 708 + i * 105
-    g.fillStyle = 'rgba(236,229,217,.82)'
-    g.font = i === 3 ? '700 19px Arial, sans-serif' : '700 25px Arial, sans-serif'
-    g.fillText(row[0], 590, y)
-    g.fillStyle = 'rgba(236,229,217,.34)'
-    g.font = '600 15px Arial, sans-serif'
-    g.fillText(row[1], 590, y + 28)
-
-    if (i < rows.length - 1) {
-      g.strokeStyle = 'rgba(236,229,217,.08)'
-      g.beginPath()
-      g.moveTo(590, y + 53)
-      g.lineTo(860, y + 53)
-      g.stroke()
-    }
-  })
-
-  // Vent slots at the lower front edge
-  g.strokeStyle = 'rgba(236,229,217,.16)'
-  g.lineWidth = 8
-  g.lineCap = 'round'
-  for (let i = 0; i < 11; i++) {
-    const x = 555 + i * 30
-    g.beginPath()
-    g.moveTo(x, 1378)
-    g.lineTo(x, 1510)
-    g.stroke()
-  }
-
-  // Tiny lower industrial labeling
-  g.fillStyle = 'rgba(236,229,217,.24)'
-  g.font = '600 15px Arial, sans-serif'
-  g.fillText('EDGE COMPUTE / LOCAL STORAGE / FIELD DEPLOYMENT', 570, 1605)
+  g.fillStyle = 'rgba(242,166,90,.82)'
+  g.fillRect(740, 565, 568, 5)
 
   const tex = new THREE.CanvasTexture(c)
   tex.colorSpace = THREE.SRGBColorSpace
-  tex.anisotropy = 4
+  tex.anisotropy = 8
   tex.needsUpdate = true
   return tex
 }
 
-function roundRect(
-  g: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  r: number,
-) {
-  const rr = Math.min(r, w / 2, h / 2)
-  g.beginPath()
-  g.moveTo(x + rr, y)
-  g.arcTo(x + w, y, x + w, y + h, rr)
-  g.arcTo(x + w, y + h, x, y + h, rr)
-  g.arcTo(x, y + h, x, y, rr)
-  g.arcTo(x, y, x + w, y, rr)
-  g.closePath()
+function ServerHardwareDetails({ mark }: { mark: THREE.Texture }) {
+  const vents = Array.from({ length: 11 })
+  const sideVents = Array.from({ length: 8 })
+
+  return (
+    <>
+      {/* Slightly inset service plate; almost the same black as the enclosure. */}
+      <mesh position={[0.035, -0.18, D / 2 + 0.007]} renderOrder={2}>
+        <boxGeometry args={[0.59, 1.92, 0.012]} />
+        <meshPhysicalMaterial
+          color="#08090c"
+          metalness={0.76}
+          roughness={0.31}
+          clearcoat={0.55}
+          clearcoatRoughness={0.24}
+          envMapIntensity={0.72}
+        />
+      </mesh>
+
+      {/* Laser-etched identity */}
+      <mesh position={[0.045, 0.67, D / 2 + 0.018]} renderOrder={4}>
+        <planeGeometry args={[0.52, 0.195]} />
+        <meshBasicMaterial
+          map={mark}
+          transparent
+          opacity={0.9}
+          depthWrite={false}
+          toneMapped={false}
+        />
+      </mesh>
+
+      {/* Physical status light */}
+      <mesh position={[0.04, 0.43, D / 2 + 0.022]} renderOrder={5}>
+        <boxGeometry args={[0.235, 0.012, 0.018]} />
+        <meshStandardMaterial
+          color="#f2a65a"
+          emissive="#f2a65a"
+          emissiveIntensity={4.5}
+          metalness={0.1}
+          roughness={0.25}
+        />
+      </mesh>
+
+      {/* Tiny hardware status LEDs */}
+      <mesh position={[-0.075, 0.255, D / 2 + 0.024]} renderOrder={5}>
+        <sphereGeometry args={[0.009, 18, 18]} />
+        <meshStandardMaterial
+          color="#74d38a"
+          emissive="#74d38a"
+          emissiveIntensity={3.4}
+          roughness={0.22}
+        />
+      </mesh>
+      <mesh position={[-0.025, 0.255, D / 2 + 0.024]} renderOrder={5}>
+        <sphereGeometry args={[0.009, 18, 18]} />
+        <meshStandardMaterial
+          color="#f2a65a"
+          emissive="#f2a65a"
+          emissiveIntensity={2.6}
+          roughness={0.22}
+        />
+      </mesh>
+      <mesh position={[0.025, 0.255, D / 2 + 0.024]} renderOrder={5}>
+        <sphereGeometry args={[0.009, 18, 18]} />
+        <meshStandardMaterial
+          color="#17191e"
+          emissive="#17191e"
+          emissiveIntensity={0.15}
+          roughness={0.3}
+        />
+      </mesh>
+
+      {/* Machined front ventilation — geometry, not a painted texture. */}
+      <group position={[0.04, -0.88, D / 2 + 0.022]}>
+        {vents.map((_, i) => (
+          <mesh key={i} position={[-0.225 + i * 0.045, 0, 0]}>
+            <boxGeometry args={[0.017, 0.29, 0.018]} />
+            <meshStandardMaterial
+              color="#020305"
+              metalness={0.38}
+              roughness={0.5}
+            />
+          </mesh>
+        ))}
+      </group>
+
+      {/* Side ventilation becomes visible as the original object rotates. */}
+      <group position={[HALF_W / 2 + 0.008, -0.72, -0.005]} rotation={[0, Math.PI / 2, 0]}>
+        {sideVents.map((_, i) => (
+          <mesh key={i} position={[0, -0.17 + i * 0.049, 0]}>
+            <boxGeometry args={[0.18, 0.014, 0.016]} />
+            <meshStandardMaterial
+              color="#020305"
+              metalness={0.35}
+              roughness={0.52}
+            />
+          </mesh>
+        ))}
+      </group>
+
+      {/* Four recessed fasteners give the service plate believable scale. */}
+      {[
+        [-0.245, 0.62],
+        [0.315, 0.62],
+        [-0.245, -1.08],
+        [0.315, -1.08],
+      ].map(([x, y], i) => (
+        <mesh key={`fastener-${i}`} position={[x, y, D / 2 + 0.021]} renderOrder={5}>
+          <cylinderGeometry args={[0.0105, 0.0105, 0.008, 20]} />
+          <meshStandardMaterial
+            color="#111319"
+            metalness={0.82}
+            roughness={0.28}
+          />
+        </mesh>
+      ))}
+    </>
+  )
 }
 
 function makeEnvTexture() {
@@ -245,30 +270,16 @@ function Monolith({ reduced }: { reduced: boolean }) {
 
   const geometry = useMemo(() => new RoundedBoxGeometry(HALF_W, H, D, 3, 0.018), [])
   const coreTexture = useMemo(() => makeCoreTexture(), [])
-  const serverFace = useMemo(() => makeServerFaceTexture(), [])
-  const faceLeft = useMemo(() => {
-    const t = serverFace.clone()
-    t.repeat.set(0.5, 1)
-    t.offset.set(0, 0)
-    t.needsUpdate = true
-    return t
-  }, [serverFace])
-  const faceRight = useMemo(() => {
-    const t = serverFace.clone()
-    t.repeat.set(0.5, 1)
-    t.offset.set(0.5, 0)
-    t.needsUpdate = true
-    return t
-  }, [serverFace])
+  const productMark = useMemo(() => makeProductMarkTexture(), [])
   const material = useMemo(
     () =>
       new THREE.MeshPhysicalMaterial({
         color: new THREE.Color('#07070a'),
-        metalness: 0.92,
-        roughness: 0.22,
-        clearcoat: 1,
-        clearcoatRoughness: 0.16,
-        envMapIntensity: 0.85,
+        metalness: 0.9,
+        roughness: 0.255,
+        clearcoat: 0.9,
+        clearcoatRoughness: 0.18,
+        envMapIntensity: 0.88,
         emissive: new THREE.Color('#ffbe86'),
         emissiveIntensity: 0,
       }),
@@ -280,12 +291,10 @@ function Monolith({ reduced }: { reduced: boolean }) {
     return () => {
       geometry.dispose()
       coreTexture.dispose()
-      serverFace.dispose()
-      faceLeft.dispose()
-      faceRight.dispose()
+      productMark.dispose()
       material.dispose()
     }
-  }, [geometry, coreTexture, serverFace, faceLeft, faceRight, material])
+  }, [geometry, coreTexture, productMark, material])
 
   useFrame((st, dt) => {
     const g = group.current
@@ -477,30 +486,11 @@ function Monolith({ reduced }: { reduced: boolean }) {
 
         <group ref={left} position={[-HALF_W / 2 + OVERLAP / 2, 0, 0]}>
           <mesh geometry={geometry} material={material} />
-          <mesh position={[0, 0, D / 2 + 0.011]} renderOrder={3}>
-            <planeGeometry args={[HALF_W * 0.965, H * 0.965]} />
-            <meshBasicMaterial
-              map={faceLeft}
-              transparent
-              opacity={0.88}
-              depthWrite={false}
-              toneMapped={false}
-            />
-          </mesh>
         </group>
 
         <group ref={right} position={[HALF_W / 2 - OVERLAP / 2, 0, 0]}>
           <mesh geometry={geometry} material={material} />
-          <mesh position={[0, 0, D / 2 + 0.011]} renderOrder={3}>
-            <planeGeometry args={[HALF_W * 0.965, H * 0.965]} />
-            <meshBasicMaterial
-              map={faceRight}
-              transparent
-              opacity={0.88}
-              depthWrite={false}
-              toneMapped={false}
-            />
-          </mesh>
+          <ServerHardwareDetails mark={productMark} />
         </group>
       </group>
     </>
@@ -515,7 +505,7 @@ export default function MonolithCanvas({ reduced }: { reduced: boolean }) {
   const [dpr, setDpr] = useState(1.5)
 
   useEffect(() => {
-    setDpr(Math.min(window.devicePixelRatio || 1, 1.75))
+    setDpr(Math.min(window.devicePixelRatio || 1, 2.25))
   }, [])
 
   return (
