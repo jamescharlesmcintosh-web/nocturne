@@ -40,6 +40,130 @@ function makeCoreTexture() {
   return tex
 }
 
+function makeServerFaceTexture() {
+  const c = document.createElement('canvas')
+  c.width = 1024
+  c.height = 1800
+  const g = c.getContext('2d')!
+
+  g.clearRect(0, 0, c.width, c.height)
+
+  // Extremely subtle smoked front-face treatment. The physical material stays visible beneath it.
+  const sheen = g.createLinearGradient(0, 0, c.width, c.height)
+  sheen.addColorStop(0, 'rgba(255,255,255,0.025)')
+  sheen.addColorStop(0.5, 'rgba(0,0,0,0.02)')
+  sheen.addColorStop(1, 'rgba(255,255,255,0.012)')
+  g.fillStyle = sheen
+  g.fillRect(0, 0, c.width, c.height)
+
+  // Fine edge/inset lines
+  g.strokeStyle = 'rgba(236,229,217,.10)'
+  g.lineWidth = 2
+  g.strokeRect(42, 44, 940, 1710)
+
+  // Product identity — intentionally restrained
+  g.textAlign = 'left'
+  g.fillStyle = 'rgba(236,229,217,.72)'
+  g.font = '600 34px Arial, sans-serif'
+  g.letterSpacing = '6px'
+  g.fillText('NOCTURNE', 570, 320)
+
+  g.fillStyle = 'rgba(236,229,217,.42)'
+  g.font = '600 20px Arial, sans-serif'
+  g.fillText('NODE 01', 572, 360)
+
+  // Amber status slit
+  const line = g.createLinearGradient(570, 0, 780, 0)
+  line.addColorStop(0, 'rgba(242,166,90,1)')
+  line.addColorStop(0.6, 'rgba(242,166,90,.8)')
+  line.addColorStop(1, 'rgba(242,166,90,0)')
+  g.fillStyle = line
+  g.fillRect(570, 430, 210, 8)
+
+  // Inset display panel on the right half
+  g.fillStyle = 'rgba(3,4,6,.94)'
+  g.strokeStyle = 'rgba(236,229,217,.13)'
+  g.lineWidth = 2
+  roundRect(g, 555, 560, 345, 565, 18)
+  g.fill()
+  g.stroke()
+
+  g.fillStyle = '#79d891'
+  g.beginPath()
+  g.arc(590, 615, 8, 0, Math.PI * 2)
+  g.fill()
+
+  g.fillStyle = 'rgba(236,229,217,.78)'
+  g.font = '700 23px Arial, sans-serif'
+  g.fillText('ONLINE', 615, 624)
+
+  const rows = [
+    ['128 GB', 'MEMORY'],
+    ['24 TB', 'NVMe STORAGE'],
+    ['10 GbE', 'NETWORK'],
+    ['OFFLINE READY', 'LOCAL MODE'],
+  ]
+
+  rows.forEach((row, i) => {
+    const y = 708 + i * 105
+    g.fillStyle = 'rgba(236,229,217,.82)'
+    g.font = i === 3 ? '700 19px Arial, sans-serif' : '700 25px Arial, sans-serif'
+    g.fillText(row[0], 590, y)
+    g.fillStyle = 'rgba(236,229,217,.34)'
+    g.font = '600 15px Arial, sans-serif'
+    g.fillText(row[1], 590, y + 28)
+
+    if (i < rows.length - 1) {
+      g.strokeStyle = 'rgba(236,229,217,.08)'
+      g.beginPath()
+      g.moveTo(590, y + 53)
+      g.lineTo(860, y + 53)
+      g.stroke()
+    }
+  })
+
+  // Vent slots at the lower front edge
+  g.strokeStyle = 'rgba(236,229,217,.16)'
+  g.lineWidth = 8
+  g.lineCap = 'round'
+  for (let i = 0; i < 11; i++) {
+    const x = 555 + i * 30
+    g.beginPath()
+    g.moveTo(x, 1378)
+    g.lineTo(x, 1510)
+    g.stroke()
+  }
+
+  // Tiny lower industrial labeling
+  g.fillStyle = 'rgba(236,229,217,.24)'
+  g.font = '600 15px Arial, sans-serif'
+  g.fillText('EDGE COMPUTE / LOCAL STORAGE / FIELD DEPLOYMENT', 570, 1605)
+
+  const tex = new THREE.CanvasTexture(c)
+  tex.colorSpace = THREE.SRGBColorSpace
+  tex.anisotropy = 4
+  tex.needsUpdate = true
+  return tex
+}
+
+function roundRect(
+  g: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number,
+) {
+  const rr = Math.min(r, w / 2, h / 2)
+  g.beginPath()
+  g.moveTo(x + rr, y)
+  g.arcTo(x + w, y, x + w, y + h, rr)
+  g.arcTo(x + w, y + h, x, y + h, rr)
+  g.arcTo(x, y + h, x, y, rr)
+  g.arcTo(x, y, x + w, y, rr)
+  g.closePath()
+}
+
 function makeEnvTexture() {
   const c = document.createElement('canvas')
   c.width = 512
@@ -121,6 +245,21 @@ function Monolith({ reduced }: { reduced: boolean }) {
 
   const geometry = useMemo(() => new RoundedBoxGeometry(HALF_W, H, D, 3, 0.018), [])
   const coreTexture = useMemo(() => makeCoreTexture(), [])
+  const serverFace = useMemo(() => makeServerFaceTexture(), [])
+  const faceLeft = useMemo(() => {
+    const t = serverFace.clone()
+    t.repeat.set(0.5, 1)
+    t.offset.set(0, 0)
+    t.needsUpdate = true
+    return t
+  }, [serverFace])
+  const faceRight = useMemo(() => {
+    const t = serverFace.clone()
+    t.repeat.set(0.5, 1)
+    t.offset.set(0.5, 0)
+    t.needsUpdate = true
+    return t
+  }, [serverFace])
   const material = useMemo(
     () =>
       new THREE.MeshPhysicalMaterial({
@@ -141,9 +280,12 @@ function Monolith({ reduced }: { reduced: boolean }) {
     return () => {
       geometry.dispose()
       coreTexture.dispose()
+      serverFace.dispose()
+      faceLeft.dispose()
+      faceRight.dispose()
       material.dispose()
     }
-  }, [geometry, coreTexture, material])
+  }, [geometry, coreTexture, serverFace, faceLeft, faceRight, material])
 
   useFrame((st, dt) => {
     const g = group.current
@@ -335,10 +477,30 @@ function Monolith({ reduced }: { reduced: boolean }) {
 
         <group ref={left} position={[-HALF_W / 2 + OVERLAP / 2, 0, 0]}>
           <mesh geometry={geometry} material={material} />
+          <mesh position={[0, 0, D / 2 + 0.011]} renderOrder={3}>
+            <planeGeometry args={[HALF_W * 0.965, H * 0.965]} />
+            <meshBasicMaterial
+              map={faceLeft}
+              transparent
+              opacity={0.88}
+              depthWrite={false}
+              toneMapped={false}
+            />
+          </mesh>
         </group>
 
         <group ref={right} position={[HALF_W / 2 - OVERLAP / 2, 0, 0]}>
           <mesh geometry={geometry} material={material} />
+          <mesh position={[0, 0, D / 2 + 0.011]} renderOrder={3}>
+            <planeGeometry args={[HALF_W * 0.965, H * 0.965]} />
+            <meshBasicMaterial
+              map={faceRight}
+              transparent
+              opacity={0.88}
+              depthWrite={false}
+              toneMapped={false}
+            />
+          </mesh>
         </group>
       </group>
     </>
