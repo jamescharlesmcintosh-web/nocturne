@@ -40,27 +40,216 @@ function makeCoreTexture() {
   return tex
 }
 
-function makeProductMarkTexture() {
+/**
+ * The two physical slabs use ONE identical, full-height, high-resolution front
+ * treatment. No small inset UI rectangle: the product face is the entire slab.
+ * All hardware detail stays parented to its own slab during the original split.
+ */
+function makeServerPanelTexture() {
   const c = document.createElement('canvas')
-  c.width = 2048
-  c.height = 768
+  c.width = 1536
+  c.height = 4096
   const g = c.getContext('2d')!
-  g.clearRect(0, 0, c.width, c.height)
+  const W = c.width
+  const Ht = c.height
 
+  const rounded = (x: number, y: number, w: number, h: number, r: number) => {
+    g.beginPath()
+    g.roundRect(x, y, w, h, r)
+  }
+
+  // Brighter gunmetal enclosure, with warm edge reflection baked into the finish.
+  const base = g.createLinearGradient(0, 0, W, Ht)
+  base.addColorStop(0, '#35373a')
+  base.addColorStop(0.22, '#282a2e')
+  base.addColorStop(0.5, '#1e2025')
+  base.addColorStop(0.78, '#28272a')
+  base.addColorStop(1, '#15171b')
+  g.fillStyle = base
+  g.fillRect(0, 0, W, Ht)
+
+  const sheen = g.createLinearGradient(0, 0, W, 0)
+  sheen.addColorStop(0, 'rgba(249,181,98,.23)')
+  sheen.addColorStop(0.045, 'rgba(255,221,172,.11)')
+  sheen.addColorStop(0.12, 'rgba(255,255,255,.035)')
+  sheen.addColorStop(0.55, 'rgba(255,255,255,.005)')
+  sheen.addColorStop(0.88, 'rgba(255,255,255,.07)')
+  sheen.addColorStop(0.98, 'rgba(245,161,75,.16)')
+  sheen.addColorStop(1, 'rgba(245,161,75,.28)')
+  g.fillStyle = sheen
+  g.fillRect(0, 0, W, Ht)
+
+  // Fine brushed-metal texture. Deterministic; no per-frame texture updates.
+  let seed = 31847
+  const rnd = () => {
+    seed = (seed * 1664525 + 1013904223) >>> 0
+    return seed / 4294967296
+  }
+  for (let i = 0; i < 1250; i++) {
+    const y = rnd() * Ht
+    g.strokeStyle = rnd() > 0.48 ? 'rgba(255,255,255,.014)' : 'rgba(0,0,0,.023)'
+    g.lineWidth = rnd() * 2 + 0.3
+    g.beginPath()
+    g.moveTo(28, y)
+    g.lineTo(W - 28, y)
+    g.stroke()
+  }
+  for (let i = 0; i < 16000; i++) {
+    const x = rnd() * W
+    const y = rnd() * Ht
+    g.fillStyle = rnd() > 0.52 ? 'rgba(255,255,255,.025)' : 'rgba(0,0,0,.027)'
+    g.fillRect(x, y, 1 + rnd() * 2, 1 + rnd() * 3)
+  }
+
+  // Full-size machined face, edge bevels and double inset seam.
+  g.lineWidth = 9
+  g.strokeStyle = 'rgba(246,200,145,.53)'
+  rounded(20, 20, W - 40, Ht - 40, 23)
+  g.stroke()
+  g.lineWidth = 3
+  g.strokeStyle = 'rgba(255,245,224,.30)'
+  rounded(42, 43, W - 84, Ht - 86, 16)
+  g.stroke()
+  g.lineWidth = 5
+  g.strokeStyle = 'rgba(0,0,0,.7)'
+  rounded(90, 118, W - 180, Ht - 234, 18)
+  g.stroke()
+  g.lineWidth = 2
+  g.strokeStyle = 'rgba(250,217,173,.22)'
+  rounded(103, 131, W - 206, Ht - 260, 14)
+  g.stroke()
+
+  // Two vertical milled fastener channels on each half.
+  const channels = [155, W - 155]
+  for (const x of channels) {
+    g.strokeStyle = 'rgba(0,0,0,.70)'
+    g.lineWidth = 12
+    g.beginPath()
+    g.moveTo(x, 670)
+    g.lineTo(x, 3870)
+    g.stroke()
+    g.strokeStyle = 'rgba(255,209,156,.20)'
+    g.lineWidth = 3
+    g.beginPath()
+    g.moveTo(x + 8, 670)
+    g.lineTo(x + 8, 3870)
+    g.stroke()
+  }
+
+  // Large, legible industrial branding: upper half, matching on BOTH slabs.
   g.textAlign = 'center'
   g.textBaseline = 'middle'
+  g.fillStyle = '#f1e9dc'
+  g.shadowColor = 'rgba(0,0,0,.65)'
+  g.shadowBlur = 20
+  g.font = '600 142px Arial, sans-serif'
+  g.fillText('N O C T U R N E', W / 2, 1010, 1190)
+  g.shadowBlur = 0
+  g.fillStyle = '#d6bca0'
+  g.font = '500 82px Arial, sans-serif'
+  g.fillText('N O D E   0 1', W / 2, 1170)
 
-  // High-resolution, understated product mark — not a screen.
-  g.fillStyle = 'rgba(236,229,217,.82)'
-  g.font = '600 116px Arial, sans-serif'
-  g.fillText('N O C T U R N E', 1024, 290)
+  // Large inset status channel. Its luminous strip is real geometry below.
+  const slitX = 295
+  const slitY = 1450
+  const slitW = 946
+  rounded(slitX, slitY, slitW, 104, 42)
+  g.fillStyle = '#060608'
+  g.fill()
+  g.strokeStyle = 'rgba(255,221,176,.55)'
+  g.lineWidth = 9
+  g.stroke()
+  rounded(slitX + 22, slitY + 18, slitW - 44, 68, 26)
+  g.fillStyle = '#141011'
+  g.fill()
+  g.strokeStyle = 'rgba(250,188,109,.32)'
+  g.lineWidth = 4
+  g.stroke()
 
-  g.fillStyle = 'rgba(236,229,217,.40)'
-  g.font = '600 54px Arial, sans-serif'
-  g.fillText('NODE 01', 1024, 455)
+  // Three large status indicator sockets below the amber bar.
+  const ledY = 1810
+  ;[520, 765, 1010].forEach((x, i) => {
+    const outer = g.createRadialGradient(x - 7, ledY - 7, 0, x, ledY, 49)
+    outer.addColorStop(0, '#4e4945')
+    outer.addColorStop(.52, '#161718')
+    outer.addColorStop(1, '#030405')
+    g.fillStyle = outer
+    g.beginPath()
+    g.arc(x, ledY, 49, 0, Math.PI * 2)
+    g.fill()
+    g.strokeStyle = 'rgba(240,205,159,.48)'
+    g.lineWidth = 6
+    g.stroke()
+    g.fillStyle = i === 0 ? '#ffb65e' : i === 1 ? '#9ff2c4' : '#17191b'
+    g.beginPath()
+    g.arc(x, ledY, 23, 0, Math.PI * 2)
+    g.fill()
+  })
 
-  g.fillStyle = 'rgba(242,166,90,.82)'
-  g.fillRect(740, 565, 568, 5)
+  // Lower grille cut into the casing, with visible machined metal lips.
+  rounded(247, 2570, W - 494, 845, 30)
+  g.fillStyle = '#0a0b0d'
+  g.fill()
+  g.strokeStyle = 'rgba(232,191,140,.35)'
+  g.lineWidth = 8
+  g.stroke()
+  for (let i = 0; i < 12; i++) {
+    const x = 292 + i * 82
+    rounded(x, 2650, 27, 690, 12)
+    g.fillStyle = '#020304'
+    g.fill()
+    g.strokeStyle = 'rgba(241,208,162,.36)'
+    g.lineWidth = 4
+    g.stroke()
+    g.fillStyle = 'rgba(255,224,183,.12)'
+    g.fillRect(x + 29, 2670, 3, 650)
+  }
+
+  // Perforated air intake at bottom of each half.
+  rounded(247, 3505, W - 494, 390, 14)
+  g.fillStyle = '#060709'
+  g.fill()
+  g.strokeStyle = 'rgba(243,196,136,.40)'
+  g.lineWidth = 7
+  g.stroke()
+  for (let row = 0; row < 13; row++) {
+    for (let col = 0; col < 37; col++) {
+      const x = 275 + col * 26 + (row % 2) * 13
+      const y = 3540 + row * 25
+      if (x > 1245) continue
+      g.fillStyle = 'rgba(0,0,0,.95)'
+      g.beginPath()
+      g.arc(x, y, 8.5, 0, Math.PI * 2)
+      g.fill()
+      g.strokeStyle = 'rgba(255,216,170,.19)'
+      g.lineWidth = 1.8
+      g.stroke()
+    }
+  }
+
+  // Hardware fasteners are deliberately visible at normal desktop scale.
+  for (const x of channels) {
+    for (const y of [680, 1410, 2180, 3860]) {
+      const bolt = g.createRadialGradient(x - 8, y - 10, 0, x, y, 42)
+      bolt.addColorStop(0, '#92908c')
+      bolt.addColorStop(.38, '#3a3838')
+      bolt.addColorStop(.7, '#141619')
+      bolt.addColorStop(1, '#050607')
+      g.fillStyle = bolt
+      g.beginPath()
+      g.arc(x, y, 40, 0, Math.PI * 2)
+      g.fill()
+      g.strokeStyle = 'rgba(249,218,175,.65)'
+      g.lineWidth = 5
+      g.stroke()
+      g.strokeStyle = '#080a0d'
+      g.lineWidth = 7
+      g.beginPath()
+      g.moveTo(x - 13, y - 2)
+      g.lineTo(x + 13, y + 2)
+      g.stroke()
+    }
+  }
 
   const tex = new THREE.CanvasTexture(c)
   tex.colorSpace = THREE.SRGBColorSpace
@@ -69,57 +258,47 @@ function makeProductMarkTexture() {
   return tex
 }
 
-function ServerHardwareDetails({ mark }: { mark: THREE.Texture }) {
-  // Everything is mounted to the original RIGHT shell, with no floating HUD.
-  const face = D / 2
+function ServerHardwareDetails({ faceMap }: { faceMap: THREE.Texture }) {
+  // Identical full-coverage hardware on BOTH moving halves.
+  const front = D / 2
   return (
     <group>
-      {/* Short shallow recess: dark anodized aluminum, barely proud of the shell */}
-      <mesh position={[0, -0.045, face + 0.0012]} renderOrder={2}>
-        <boxGeometry args={[0.47, 1.53, 0.002]} />
-        <meshStandardMaterial color="#08090c" metalness={0.82} roughness={0.36} />
+      <mesh position={[0, 0, front + 0.0018]} renderOrder={2}>
+        <planeGeometry args={[HALF_W * 0.975, H * 0.986]} />
+        <meshBasicMaterial map={faceMap} toneMapped={false} />
       </mesh>
-      {/* High-resolution laser-etched mark placed directly on the enclosure */}
-      <mesh position={[0.005, 0.54, face + 0.0027]} renderOrder={3}>
-        <planeGeometry args={[0.37, 0.11]} />
-        <meshBasicMaterial map={mark} transparent opacity={0.5} depthWrite={false} polygonOffset polygonOffsetFactor={-1} />
+
+      {/* Deep inset for the light bar; illumination sits in the channel. */}
+      <mesh position={[0, 0.371, front + 0.005]} renderOrder={3}>
+        <boxGeometry args={[0.472, 0.042, 0.006]} />
+        <meshStandardMaterial color="#050505" metalness={0.68} roughness={0.36} />
       </mesh>
-      {/* Amber light embedded in a narrow black milled channel */}
-      <mesh position={[0, 0.365, face + 0.003]}>
-        <boxGeometry args={[0.17, 0.010, 0.004]} />
-        <meshStandardMaterial color="#010101" metalness={0.6} roughness={0.4} />
+      <mesh position={[0, 0.371, front + 0.009]} renderOrder={4}>
+        <boxGeometry args={[0.420, 0.014, 0.002]} />
+        <meshBasicMaterial color="#ffb15e" toneMapped={false} />
       </mesh>
-      <mesh position={[0, 0.365, face + 0.0051]}>
-        <boxGeometry args={[0.131, 0.0035, 0.002]} />
-        <meshStandardMaterial color="#b77d43" emissive="#b77d43" emissiveIntensity={1.15} toneMapped={false} />
+      <mesh position={[0, 0.371, front + 0.0105]} renderOrder={5}>
+        <planeGeometry args={[0.46, 0.027]} />
+        <meshBasicMaterial color="#e6a059" transparent opacity={0.26} depthWrite={false} toneMapped={false} />
       </mesh>
-      {/* Three tiny status lenses, flush to casing */}
-      {([-0.038,0,0.038] as number[]).map((x,i)=>(
-        <mesh key={i} position={[x, 0.255, face + 0.0032]}>
-          <circleGeometry args={[0.0046, 24]} />
-          <meshStandardMaterial
-            color={i===0?"#568d67":i===1?"#8e6d44":"#202329"}
-            emissive={i===0?"#3e7752":i===1?"#72512c":"#0b0b0d"}
-            emissiveIntensity={i<2?0.7:0.1}
-            roughness={0.4}
+
+      {/* The three indicators align exactly with the sockets in the full face. */}
+      {([-0.126, 0, 0.126] as number[]).map((x, i) => (
+        <mesh key={i} position={[x, 0.157, front + 0.008]} renderOrder={4}>
+          <circleGeometry args={[0.0117, 28]} />
+          <meshBasicMaterial
+            color={i === 0 ? '#ffc171' : i === 1 ? '#b8f7d4' : '#1b1d21'}
+            toneMapped={false}
           />
         </mesh>
       ))}
-      {/* Negative-looking cutouts instead of raised bars */}
-      <group position={[0, -0.61, face + 0.003]}>
-        {Array.from({length:9},(_,i)=>(
-          <mesh key={i} position={[-0.156+i*0.039,0,0]}>
-            <boxGeometry args={[0.012,0.18,0.0018]} />
-            <meshStandardMaterial color="#010203" metalness={0.12} roughness={0.94} />
-          </mesh>
-        ))}
-      </group>
-      {/* Side vents kept on the true outer edge of the right half */}
-      <group position={[HALF_W/2 + 0.0008,-0.76,0]} rotation={[0,Math.PI/2,0]}>
-        {Array.from({length:6},(_,i)=>(
-          <mesh key={i} position={[0,-0.115+i*0.046,0]}>
-            <boxGeometry args={[0.17,0.011,0.0015]} />
-            <meshStandardMaterial color="#010203" roughness={0.92} />
+
+      {/* Side-edge machining becomes visible as the slab rotates. */}
+      <group position={[HALF_W / 2 + 0.001, -0.74, 0]} rotation={[0, Math.PI / 2, 0]}>
+        {Array.from({ length: 9 }, (_, i) => (
+          <mesh key={i} position={[0, -0.16 + i * 0.04, 0]}>
+            <boxGeometry args={[0.19, 0.011, 0.002]} />
+            <meshStandardMaterial color="#050607" metalness={0.55} roughness={0.7} />
           </mesh>
         ))}
       </group>
@@ -208,7 +387,7 @@ function Monolith({ reduced }: { reduced: boolean }) {
 
   const geometry = useMemo(() => new RoundedBoxGeometry(HALF_W, H, D, 3, 0.018), [])
   const coreTexture = useMemo(() => makeCoreTexture(), [])
-  const productMark = useMemo(() => makeProductMarkTexture(), [])
+  const serverPanel = useMemo(() => makeServerPanelTexture(), [])
   const material = useMemo(
     () =>
       new THREE.MeshPhysicalMaterial({
@@ -229,10 +408,10 @@ function Monolith({ reduced }: { reduced: boolean }) {
     return () => {
       geometry.dispose()
       coreTexture.dispose()
-      productMark.dispose()
+      serverPanel.dispose()
       material.dispose()
     }
-  }, [geometry, coreTexture, productMark, material])
+  }, [geometry, coreTexture, serverPanel, material])
 
   useFrame((st, dt) => {
     const g = group.current
@@ -424,11 +603,12 @@ function Monolith({ reduced }: { reduced: boolean }) {
 
         <group ref={left} position={[-HALF_W / 2 + OVERLAP / 2, 0, 0]}>
           <mesh geometry={geometry} material={material} />
+          <ServerHardwareDetails faceMap={serverPanel} />
         </group>
 
         <group ref={right} position={[HALF_W / 2 - OVERLAP / 2, 0, 0]}>
           <mesh geometry={geometry} material={material} />
-          <ServerHardwareDetails mark={productMark} />
+          <ServerHardwareDetails faceMap={serverPanel} />
         </group>
       </group>
     </>
