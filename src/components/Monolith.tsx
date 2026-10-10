@@ -70,122 +70,60 @@ function makeProductMarkTexture() {
 }
 
 function ServerHardwareDetails({ mark }: { mark: THREE.Texture }) {
-  const vents = Array.from({ length: 11 })
-  const sideVents = Array.from({ length: 8 })
-
+  // Everything is mounted to the original RIGHT shell, with no floating HUD.
+  const face = D / 2
   return (
-    <>
-      {/* Slightly inset service plate; almost the same black as the enclosure. */}
-      <mesh position={[0.035, -0.18, D / 2 + 0.007]} renderOrder={2}>
-        <boxGeometry args={[0.59, 1.92, 0.012]} />
-        <meshPhysicalMaterial
-          color="#08090c"
-          metalness={0.76}
-          roughness={0.31}
-          clearcoat={0.55}
-          clearcoatRoughness={0.24}
-          envMapIntensity={0.72}
-        />
+    <group>
+      {/* Short shallow recess: dark anodized aluminum, barely proud of the shell */}
+      <mesh position={[0, -0.045, face + 0.0012]} renderOrder={2}>
+        <boxGeometry args={[0.47, 1.53, 0.002]} />
+        <meshStandardMaterial color="#08090c" metalness={0.82} roughness={0.36} />
       </mesh>
-
-      {/* Laser-etched identity */}
-      <mesh position={[0.045, 0.67, D / 2 + 0.018]} renderOrder={4}>
-        <planeGeometry args={[0.52, 0.195]} />
-        <meshBasicMaterial
-          map={mark}
-          transparent
-          opacity={0.9}
-          depthWrite={false}
-          toneMapped={false}
-        />
+      {/* High-resolution laser-etched mark placed directly on the enclosure */}
+      <mesh position={[0.005, 0.54, face + 0.0027]} renderOrder={3}>
+        <planeGeometry args={[0.37, 0.11]} />
+        <meshBasicMaterial map={mark} transparent opacity={0.5} depthWrite={false} polygonOffset polygonOffsetFactor={-1} />
       </mesh>
-
-      {/* Physical status light */}
-      <mesh position={[0.04, 0.43, D / 2 + 0.022]} renderOrder={5}>
-        <boxGeometry args={[0.235, 0.012, 0.018]} />
-        <meshStandardMaterial
-          color="#f2a65a"
-          emissive="#f2a65a"
-          emissiveIntensity={4.5}
-          metalness={0.1}
-          roughness={0.25}
-        />
+      {/* Amber light embedded in a narrow black milled channel */}
+      <mesh position={[0, 0.365, face + 0.003]}>
+        <boxGeometry args={[0.17, 0.010, 0.004]} />
+        <meshStandardMaterial color="#010101" metalness={0.6} roughness={0.4} />
       </mesh>
-
-      {/* Tiny hardware status LEDs */}
-      <mesh position={[-0.075, 0.255, D / 2 + 0.024]} renderOrder={5}>
-        <sphereGeometry args={[0.009, 18, 18]} />
-        <meshStandardMaterial
-          color="#74d38a"
-          emissive="#74d38a"
-          emissiveIntensity={3.4}
-          roughness={0.22}
-        />
+      <mesh position={[0, 0.365, face + 0.0051]}>
+        <boxGeometry args={[0.131, 0.0035, 0.002]} />
+        <meshStandardMaterial color="#b77d43" emissive="#b77d43" emissiveIntensity={1.15} toneMapped={false} />
       </mesh>
-      <mesh position={[-0.025, 0.255, D / 2 + 0.024]} renderOrder={5}>
-        <sphereGeometry args={[0.009, 18, 18]} />
-        <meshStandardMaterial
-          color="#f2a65a"
-          emissive="#f2a65a"
-          emissiveIntensity={2.6}
-          roughness={0.22}
-        />
-      </mesh>
-      <mesh position={[0.025, 0.255, D / 2 + 0.024]} renderOrder={5}>
-        <sphereGeometry args={[0.009, 18, 18]} />
-        <meshStandardMaterial
-          color="#17191e"
-          emissive="#17191e"
-          emissiveIntensity={0.15}
-          roughness={0.3}
-        />
-      </mesh>
-
-      {/* Machined front ventilation — geometry, not a painted texture. */}
-      <group position={[0.04, -0.88, D / 2 + 0.022]}>
-        {vents.map((_, i) => (
-          <mesh key={i} position={[-0.225 + i * 0.045, 0, 0]}>
-            <boxGeometry args={[0.017, 0.29, 0.018]} />
-            <meshStandardMaterial
-              color="#020305"
-              metalness={0.38}
-              roughness={0.5}
-            />
-          </mesh>
-        ))}
-      </group>
-
-      {/* Side ventilation becomes visible as the original object rotates. */}
-      <group position={[HALF_W / 2 + 0.008, -0.72, -0.005]} rotation={[0, Math.PI / 2, 0]}>
-        {sideVents.map((_, i) => (
-          <mesh key={i} position={[0, -0.17 + i * 0.049, 0]}>
-            <boxGeometry args={[0.18, 0.014, 0.016]} />
-            <meshStandardMaterial
-              color="#020305"
-              metalness={0.35}
-              roughness={0.52}
-            />
-          </mesh>
-        ))}
-      </group>
-
-      {/* Four recessed fasteners give the service plate believable scale. */}
-      {[
-        [-0.245, 0.62],
-        [0.315, 0.62],
-        [-0.245, -1.08],
-        [0.315, -1.08],
-      ].map(([x, y], i) => (
-        <mesh key={`fastener-${i}`} position={[x, y, D / 2 + 0.021]} renderOrder={5}>
-          <cylinderGeometry args={[0.0105, 0.0105, 0.008, 20]} />
+      {/* Three tiny status lenses, flush to casing */}
+      {([-0.038,0,0.038] as number[]).map((x,i)=>(
+        <mesh key={i} position={[x, 0.255, face + 0.0032]}>
+          <circleGeometry args={[0.0046, 24]} />
           <meshStandardMaterial
-            color="#111319"
-            metalness={0.82}
-            roughness={0.28}
+            color={i===0?"#568d67":i===1?"#8e6d44":"#202329"}
+            emissive={i===0?"#3e7752":i===1?"#72512c":"#0b0b0d"}
+            emissiveIntensity={i<2?0.7:0.1}
+            roughness={0.4}
           />
         </mesh>
       ))}
-    </>
+      {/* Negative-looking cutouts instead of raised bars */}
+      <group position={[0, -0.61, face + 0.003]}>
+        {Array.from({length:9},(_,i)=>(
+          <mesh key={i} position={[-0.156+i*0.039,0,0]}>
+            <boxGeometry args={[0.012,0.18,0.0018]} />
+            <meshStandardMaterial color="#010203" metalness={0.12} roughness={0.94} />
+          </mesh>
+        ))}
+      </group>
+      {/* Side vents kept on the true outer edge of the right half */}
+      <group position={[HALF_W/2 + 0.0008,-0.76,0]} rotation={[0,Math.PI/2,0]}>
+        {Array.from({length:6},(_,i)=>(
+          <mesh key={i} position={[0,-0.115+i*0.046,0]}>
+            <boxGeometry args={[0.17,0.011,0.0015]} />
+            <meshStandardMaterial color="#010203" roughness={0.92} />
+          </mesh>
+        ))}
+      </group>
+    </group>
   )
 }
 
